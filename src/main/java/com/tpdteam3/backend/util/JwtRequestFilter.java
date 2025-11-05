@@ -14,11 +14,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 @Component
-public class JwtComercialFilter extends OncePerRequestFilter {
+public class JwtRequestFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
 
     @Autowired
-    public JwtComercialFilter(JwtUtil jwtUtil) {
+    public JwtRequestFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
 
@@ -27,18 +27,27 @@ public class JwtComercialFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        // Permitir endpoints públicos sin validar JWT
+        String path = request.getRequestURI();
+        if (path.startsWith("/backend/api/auth/") || request.getMethod().equals("OPTIONS")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
-            response.getWriter().write("Token no proporcionado");
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Token no proporcionado\"}");
             return;
         }
 
         String token = authHeader.substring(7); // quitar "Bearer "
         if (!jwtUtil.validateToken(token)) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
-            response.getWriter().write("Token inválido o expirado");
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Token inválido o expirado\"}");
             return;
         }
 
@@ -51,5 +60,4 @@ public class JwtComercialFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
 }

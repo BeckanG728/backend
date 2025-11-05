@@ -11,7 +11,7 @@
     <groupId>com.tpdteam3</groupId>
     <artifactId>backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>war</packaging>
     <name>backend</name>
     <description>App backend para productos y clientes</description>
     <url/>
