@@ -14,7 +14,7 @@ import java.util.*;
 @Service
 public class DFSClientService {
 
-    @Value("${dfs.master.url:http://localhost:9000}")
+    @Value("${dfs.master.url:http://localhost:9000/master}")
     private String masterUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
