@@ -20,9 +20,16 @@ public class Producto {
     @Column(name = "stocProd")
     private Double stocProd;
 
+    @Column(name = "imagenId")
+    private String imagenId; // Referencia al archivo en el sistema distribuido
+
+    @Column(name = "imagenNombre")
+    private String imagenNombre; // Nombre original del archivo
+
     @Version
     private Long version;
 
+    // Getters y Setters
     public Integer getCodiProd() {
         return codiProd;
     }
@@ -53,6 +60,22 @@ public class Producto {
 
     public void setStocProd(Double stocProd) {
         this.stocProd = stocProd;
+    }
+
+    public String getImagenId() {
+        return imagenId;
+    }
+
+    public void setImagenId(String imagenId) {
+        this.imagenId = imagenId;
+    }
+
+    public String getImagenNombre() {
+        return imagenNombre;
+    }
+
+    public void setImagenNombre(String imagenNombre) {
+        this.imagenNombre = imagenNombre;
     }
 
     public Long getVersion() {

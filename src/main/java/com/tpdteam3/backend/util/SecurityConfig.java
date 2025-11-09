@@ -29,7 +29,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll() // Endpoints públicos
+                        .requestMatchers("/api/auth/**").permitAll() // Login público
+                        .requestMatchers("/api/productos/**").authenticated() // Productos requieren auth
+                        .requestMatchers("/api/clientes/**").authenticated() // Clientes requieren auth
+                        .requestMatchers("/backend/api/imagenes/**").authenticated() // Imágenes requieren auth
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -39,5 +42,5 @@ public class SecurityConfig {
 
         return http.build();
     }
-    
+
 }
