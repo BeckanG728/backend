@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
@@ -32,8 +33,10 @@ public class ImagenController {
             @PathVariable Integer productoId,
             @RequestParam("file") MultipartFile file) {
 
+        Producto producto = null;
+
         try {
-            // Validar que el archivo sea una imagen
+            // 1. Validar que el archivo sea una imagen
             String contentType = file.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 Map<String, String> error = new HashMap<>();
@@ -42,26 +45,38 @@ public class ImagenController {
                 return ResponseEntity.badRequest().body(error);
             }
 
-            // Obtener producto
-            Producto producto = productoService.obtener(productoId);
+            // 2. Obtener producto - CAPTURAR ESPECÍFICAMENTE ESTE ERROR
+            try {
+                producto = productoService.obtener(productoId);
+                System.out.println("✅ Producto encontrado: " + producto.getNombProd());
+            } catch (RuntimeException e) {
+                System.err.println("❌ ERROR: Producto no encontrado - ID: " + productoId);
+                Map<String, String> error = new HashMap<>();
+                error.put("status", "error");
+                error.put("message", "Producto no encontrado con ID: " + productoId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
 
-            // Si ya tiene imagen, eliminar la anterior
+            // 3. Si ya tiene imagen, eliminar la anterior
             if (producto.getImagenId() != null) {
                 try {
                     dfsClientService.deleteImagen(producto.getImagenId());
+                    System.out.println("✅ Imagen anterior eliminada: " + producto.getImagenId());
                 } catch (Exception e) {
-                    // Log error pero continuar
-                    System.err.println("Error eliminando imagen anterior: " + e.getMessage());
+                    System.err.println("⚠️ Error eliminando imagen anterior: " + e.getMessage());
                 }
             }
 
-            // Subir nueva imagen al sistema distribuido
+            // 4. Subir nueva imagen al sistema distribuido
+            System.out.println("📤 Intentando subir imagen al DFS...");
             String imagenId = dfsClientService.uploadImagen(file);
+            System.out.println("✅ Imagen subida al DFS con ID: " + imagenId);
 
-            // Actualizar producto con referencia a la imagen
+            // 5. Actualizar producto con referencia a la imagen
             producto.setImagenId(imagenId);
             producto.setImagenNombre(file.getOriginalFilename());
             productoService.actualizar(producto);
+            System.out.println("✅ Producto actualizado en BD");
 
             Map<String, String> response = new HashMap<>();
             response.put("status", "success");
@@ -70,16 +85,24 @@ public class ImagenController {
 
             return ResponseEntity.ok(response);
 
-        } catch (RuntimeException e) {
+        } catch (ResourceAccessException e) {
+            // Error de conexión con Master Service
+            System.err.println("❌ ERROR DE CONEXIÓN con Master Service:");
+            e.printStackTrace();
             Map<String, String> error = new HashMap<>();
             error.put("status", "error");
-            error.put("message", "Producto no encontrado");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            error.put("message", "No se puede conectar al Master Service. Verifica que esté corriendo en http://localhost:9000/master");
+            error.put("detalle", e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+
         } catch (Exception e) {
+            // Cualquier otro error
+            System.err.println("❌ ERROR GENERAL al subir imagen:");
             e.printStackTrace();
             Map<String, String> error = new HashMap<>();
             error.put("status", "error");
             error.put("message", "Error al subir imagen: " + e.getMessage());
+            error.put("tipo", e.getClass().getSimpleName());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
@@ -117,8 +140,11 @@ public class ImagenController {
             return new ResponseEntity<>(imageData, headers, HttpStatus.OK);
 
         } catch (RuntimeException e) {
+            System.err.println("❌ ERROR en downloadImagen: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
+            System.err.println("❌ ERROR GENERAL en downloadImagen:");
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

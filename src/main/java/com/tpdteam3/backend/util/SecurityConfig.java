@@ -29,10 +29,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll() // Login público
-                        .requestMatchers("/api/productos/**").authenticated() // Productos requieren auth
-                        .requestMatchers("/api/clientes/**").authenticated() // Clientes requieren auth
-                        .requestMatchers("/backend/api/imagenes/**").authenticated() // Imágenes requieren auth
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // ✅ AGREGAR ESTA LÍNEA - Permitir descarga sin auth
+                        .requestMatchers(HttpMethod.GET, "/api/imagenes/download/**").permitAll()
+
+                        .requestMatchers("/api/imagenes/**").authenticated() // Upload/delete siguen protegidos
+                        .requestMatchers("/api/productos/**").authenticated()
+                        .requestMatchers("/api/clientes/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
