@@ -27,11 +27,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // Obtener la ruta de la solicitud
-        String path = request.getRequestURI();
-
         // Permitir endpoints públicos sin validar JWT
-        if (path.contains("/api/auth/") || request.getMethod().equals("OPTIONS")) {
+        String path = request.getRequestURI();
+        if (path.startsWith("/backend/api/auth/") || request.getMethod().equals("OPTIONS")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -41,7 +39,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
             response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
             response.getWriter().write("{\"error\": \"Token no proporcionado\"}");
             return;
         }
@@ -50,7 +47,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (!jwtUtil.validateToken(token)) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
             response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
             response.getWriter().write("{\"error\": \"Token inválido o expirado\"}");
             return;
         }

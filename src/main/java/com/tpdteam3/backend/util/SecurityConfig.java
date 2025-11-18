@@ -29,14 +29,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-
-                        // ✅ AGREGAR ESTA LÍNEA - Permitir descarga sin auth
-                        .requestMatchers(HttpMethod.GET, "/api/imagenes/download/**").permitAll()
-
-                        .requestMatchers("/api/imagenes/**").authenticated() // Upload/delete siguen protegidos
-                        .requestMatchers("/api/productos/**").authenticated()
-                        .requestMatchers("/api/clientes/**").authenticated()
+                        .requestMatchers("/api/auth/**").permitAll() // Endpoints públicos
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -46,5 +39,5 @@ public class SecurityConfig {
 
         return http.build();
     }
-
+    
 }
